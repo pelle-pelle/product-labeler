@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Labeler - EC Image Creator</title>
+    <style>
+      /* 全体のスタイル：清潔感のあるグレー背景 */
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        text-align: center;
+        background: #f4f7f9;
+        padding: 20px;
+        color: #333;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        display: inline-block;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        width: 360px;
+      }
+      h1 {
+        font-size: 20px;
+        margin-bottom: 20px;
+        color: #444;
+      }
+
+      /* 入力エリアのスタイル */
+      .controls {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 20px;
+        text-align: left;
+      }
+      label {
+        font-size: 12px;
+        font-weight: bold;
+        color: #888;
+        text-transform: uppercase;
+      }
+      input[type="text"],
+      input[type="file"] {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* キャンバス：作成される画像のプレビュー */
+      canvas {
+        border: 1px solid #eee;
+        background: #fff;
+        max-width: 100%;
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+
+      /* ボタンのスタイル */
+      .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      button {
+        cursor: pointer;
+        padding: 12px;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        transition: 0.2s;
+      }
+      .btn-draw {
+        background: #333;
+        color: white;
+      }
+      .btn-draw:hover {
+        background: #555;
+      }
+      .btn-save {
+        background: #28a745;
+        color: white;
+      }
+      .btn-save:hover {
+        background: #218838;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Product Labeler</h1>
+
+      <div class="controls">
+        <label>1. Base Image</label>
+        <input type="file" id="upload" accept="image/*" />
+
+        <label>2. Product Name (Text A)</label>
+        <input type="text" id="textA" placeholder="商品名を入力" />
+
+        <label>3. Description (Text B)</label>
+        <input type="text" id="textB" placeholder="商品説明を入力" />
+
+        <label>4. Item Code (Text C)</label>
+        <input type="text" id="textC" placeholder="6桁のコード" maxlength="6" />
+
+        <div class="button-group">
+          <button class="btn-draw" onclick="draw()">Preview</button>
+          <button class="btn-save" onclick="download()">Save JPG</button>
+        </div>
+      </div>
+
+      <canvas id="canvas" width="330" height="420"></canvas>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      let imgElement = new Image();
+
+      // 画像がアップロードされた時の処理
+      document.getElementById("upload").addEventListener("change", (e) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          imgElement.src = event.target.result;
+          imgElement.onload = () => draw(); // 読み込み完了時に自動描画
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      });
+
+      // テキスト折り返し＋座布団描画の職人関数
+      function wrapText(
+        context,
+        text,
+        x,
+        y,
+        maxWidth,
+        lineHeight,
+        textFillStyle,
+      ) {
+        if (!text) return y;
+        const words = text.split("");
+        let line = "";
+        let currentY = y;
+        const padding = 10;
+
+        // 行数計算
+        let lineCount = 1;
+        let testLineTemp = "";
+        for (let n = 0; n < words.length; n++) {
+          let testLine = testLineTemp + words[n];
+          if (context.measureText(testLine).width > maxWidth && n > 0) {
+            testLineTemp = words[n];
+            lineCount++;
+          } else {
+            testLineTemp = testLine;
+          }
+        }
+        const totalHeight = lineCount * lineHeight;
+
+        // グラデーション座布団
+        const grad = context.createLinearGradient(0, 0, maxWidth + 60, 0);
+        grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+        grad.addColorStop(0.8, "rgba(255, 255, 255, 0.6)");
+        grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+        context.fillStyle = grad;
+        context.fillRect(
+          0,
+          y - lineHeight * 0.8 - padding,
+          maxWidth + 60,
+          totalHeight + padding * 2,
+        );
+
+        // 文字の描画
+        context.textAlign = "left";
+        context.fillStyle = textFillStyle;
+        context.strokeStyle = "rgba(255, 255, 255, 0.8)"; // 控えめな白い縁取り
+        context.lineWidth = 4;
+        context.lineJoin = "round";
+
+        line = "";
+        for (let n = 0; n < words.length; n++) {
+          let testLine = line + words[n];
+          if (context.measureText(testLine).width > maxWidth && n > 0) {
+            context.strokeText(line, x, currentY);
+            context.fillText(line, x, currentY);
+            line = words[n];
+            currentY += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+        context.strokeText(line, x, currentY);
+        context.fillText(line, x, currentY);
+        return currentY;
+      }
+
+      function draw() {
+        if (!imgElement.src) return;
+
+        // キャンバスをクリアして画像を描画
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(imgElement, 0, 0, 330, 420);
+
+        const maxWidth = 260;
+        const startX = 15;
+        const textColor = "#222222";
+
+        // 商品名 (Text A)
+        ctx.font = "bold 22px sans-serif";
+        let nextY = wrapText(
+          ctx,
+          document.getElementById("textA").value,
+          startX,
+          45,
+          maxWidth,
+          30,
+          textColor,
+        );
+
+        // 商品説明 (Text B)
+        ctx.font = "16px sans-serif";
+        wrapText(
+          ctx,
+          document.getElementById("textB").value,
+          startX,
+          nextY + 40,
+          maxWidth,
+          24,
+          textColor,
+        );
+
+        // 商品コード (Text C) - 右下配置
+        ctx.fillStyle = "#0056b3";
+        ctx.font = "bold 18px monospace";
+        ctx.textAlign = "right";
+        ctx.fillText(document.getElementById("textC").value, 315, 400);
+      }
+
+      function download() {
+        const link = document.createElement("a");
+        link.download = "product-image.jpg";
+        link.href = canvas.toDataURL("image/jpeg", 0.9);
+        link.click();
+      }
+    </script>
+  </body>
+</html>
