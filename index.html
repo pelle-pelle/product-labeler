@@ -3,9 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Product Labeler - EC Image Creator</title>
+    <title>Product Labeler - 420x560</title>
     <style>
-      /* 全体のスタイル：清潔感のあるグレー背景 */
       body {
         font-family: "Helvetica Neue", Arial, sans-serif;
         text-align: center;
@@ -19,15 +18,13 @@
         border-radius: 12px;
         display: inline-block;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        width: 360px;
+        width: 460px;
       }
       h1 {
         font-size: 20px;
         margin-bottom: 20px;
         color: #444;
       }
-
-      /* 入力エリアのスタイル */
       .controls {
         display: grid;
         gap: 12px;
@@ -35,10 +32,11 @@
         text-align: left;
       }
       label {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
         color: #888;
         text-transform: uppercase;
+        letter-spacing: 1px;
       }
       input[type="text"],
       input[type="file"] {
@@ -48,17 +46,15 @@
         width: 100%;
         box-sizing: border-box;
       }
-
-      /* キャンバス：作成される画像のプレビュー */
+      /* プレビューエリアも少し大きく調整 */
       canvas {
         border: 1px solid #eee;
         background: #fff;
         max-width: 100%;
         border-radius: 4px;
         margin-top: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       }
-
-      /* ボタンのスタイル */
       .button-group {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -77,15 +73,9 @@
         background: #333;
         color: white;
       }
-      .btn-draw:hover {
-        background: #555;
-      }
       .btn-save {
         background: #28a745;
         color: white;
-      }
-      .btn-save:hover {
-        background: #218838;
       }
     </style>
   </head>
@@ -112,7 +102,7 @@
         </div>
       </div>
 
-      <canvas id="canvas" width="330" height="420"></canvas>
+      <canvas id="canvas" width="420" height="560"></canvas>
     </div>
 
     <script>
@@ -120,17 +110,15 @@
       const ctx = canvas.getContext("2d");
       let imgElement = new Image();
 
-      // 画像がアップロードされた時の処理
       document.getElementById("upload").addEventListener("change", (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
           imgElement.src = event.target.result;
-          imgElement.onload = () => draw(); // 読み込み完了時に自動描画
+          imgElement.onload = () => draw();
         };
         reader.readAsDataURL(e.target.files[0]);
       });
 
-      // テキスト折り返し＋座布団描画の職人関数
       function wrapText(
         context,
         text,
@@ -144,9 +132,8 @@
         const words = text.split("");
         let line = "";
         let currentY = y;
-        const padding = 10;
+        const padding = 12;
 
-        // 行数計算
         let lineCount = 1;
         let testLineTemp = "";
         for (let n = 0; n < words.length; n++) {
@@ -160,8 +147,8 @@
         }
         const totalHeight = lineCount * lineHeight;
 
-        // グラデーション座布団
-        const grad = context.createLinearGradient(0, 0, maxWidth + 60, 0);
+        // 座布団の横幅もキャンバスに合わせて調整
+        const grad = context.createLinearGradient(0, 0, maxWidth + 80, 0);
         grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
         grad.addColorStop(0.8, "rgba(255, 255, 255, 0.6)");
         grad.addColorStop(1, "rgba(255, 255, 255, 0)");
@@ -170,14 +157,13 @@
         context.fillRect(
           0,
           y - lineHeight * 0.8 - padding,
-          maxWidth + 60,
+          maxWidth + 80,
           totalHeight + padding * 2,
         );
 
-        // 文字の描画
         context.textAlign = "left";
         context.fillStyle = textFillStyle;
-        context.strokeStyle = "rgba(255, 255, 255, 0.8)"; // 控えめな白い縁取り
+        context.strokeStyle = "rgba(255, 255, 255, 0.8)";
         context.lineWidth = 4;
         context.lineJoin = "round";
 
@@ -201,49 +187,56 @@
       function draw() {
         if (!imgElement.src) return;
 
-        // キャンバスをクリアして画像を描画
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(imgElement, 0, 0, 330, 420);
 
-        const maxWidth = 260;
-        const startX = 15;
+        // --- 【変更点】画像をサイズ変更せず左下に配置 ---
+        // X座標は0、Y座標は「キャンバスの高さ - 画像の高さ」
+        const drawX = 0;
+        const drawY = canvas.height - imgElement.height;
+        ctx.drawImage(imgElement, drawX, drawY);
+
+        // キャンバスが広がったので、文字の最大幅を350px程度に拡張
+        const maxWidth = 350;
+        const startX = 20;
         const textColor = "#222222";
 
-        // 商品名 (Text A)
-        ctx.font = "bold 22px sans-serif";
+        ctx.font = "bold 24px sans-serif"; // 少しフォントサイズを上げました
         let nextY = wrapText(
           ctx,
           document.getElementById("textA").value,
           startX,
-          45,
+          50,
           maxWidth,
-          30,
+          34,
           textColor,
         );
 
-        // 商品説明 (Text B)
-        ctx.font = "16px sans-serif";
+        ctx.font = "18px sans-serif";
         wrapText(
           ctx,
           document.getElementById("textB").value,
           startX,
-          nextY + 40,
+          nextY + 45,
           maxWidth,
-          24,
+          26,
           textColor,
         );
 
-        // 商品コード (Text C) - 右下配置
         ctx.fillStyle = "#0056b3";
-        ctx.font = "bold 18px monospace";
+        ctx.font = "bold 20px monospace";
         ctx.textAlign = "right";
-        ctx.fillText(document.getElementById("textC").value, 315, 400);
+        // 右下（余白10px）に配置
+        ctx.fillText(
+          document.getElementById("textC").value,
+          canvas.width - 15,
+          canvas.height - 15,
+        );
       }
 
       function download() {
         const link = document.createElement("a");
         link.download = "product-image.jpg";
-        link.href = canvas.toDataURL("image/jpeg", 0.9);
+        link.href = canvas.toDataURL("image/jpeg", 0.95);
         link.click();
       }
     </script>
