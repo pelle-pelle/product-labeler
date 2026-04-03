@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Product Labeler - 420x560</title>
+    <title>Product Labeler - White Background</title>
     <style>
       body {
         font-family: "Helvetica Neue", Arial, sans-serif;
@@ -18,7 +18,7 @@
         border-radius: 12px;
         display: inline-block;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        width: 460px;
+        width: 440px;
       }
       h1 {
         font-size: 20px;
@@ -46,14 +46,12 @@
         width: 100%;
         box-sizing: border-box;
       }
-      /* プレビューエリアも少し大きく調整 */
       canvas {
         border: 1px solid #eee;
         background: #fff;
         max-width: 100%;
         border-radius: 4px;
         margin-top: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       }
       .button-group {
         display: grid;
@@ -147,7 +145,6 @@
         }
         const totalHeight = lineCount * lineHeight;
 
-        // 座布団の横幅もキャンバスに合わせて調整
         const grad = context.createLinearGradient(0, 0, maxWidth + 80, 0);
         grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
         grad.addColorStop(0.8, "rgba(255, 255, 255, 0.6)");
@@ -185,22 +182,24 @@
       }
 
       function draw() {
+        // 1. まずキャンバス全体を白で塗りつぶす（背景色）
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 画像が選択されていない場合はここで終了（背景だけ白くなる）
         if (!imgElement.src) return;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // --- 【変更点】画像をサイズ変更せず左下に配置 ---
-        // X座標は0、Y座標は「キャンバスの高さ - 画像の高さ」
+        // 2. 画像を左下に配置
         const drawX = 0;
         const drawY = canvas.height - imgElement.height;
         ctx.drawImage(imgElement, drawX, drawY);
 
-        // キャンバスが広がったので、文字の最大幅を350px程度に拡張
+        // 3. テキストの描画
         const maxWidth = 350;
         const startX = 20;
         const textColor = "#222222";
 
-        ctx.font = "bold 24px sans-serif"; // 少しフォントサイズを上げました
+        ctx.font = "bold 24px sans-serif";
         let nextY = wrapText(
           ctx,
           document.getElementById("textA").value,
@@ -225,7 +224,6 @@
         ctx.fillStyle = "#0056b3";
         ctx.font = "bold 20px monospace";
         ctx.textAlign = "right";
-        // 右下（余白10px）に配置
         ctx.fillText(
           document.getElementById("textC").value,
           canvas.width - 15,
@@ -236,6 +234,7 @@
       function download() {
         const link = document.createElement("a");
         link.download = "product-image.jpg";
+        // 画質を少し高めに(0.95)設定
         link.href = canvas.toDataURL("image/jpeg", 0.95);
         link.click();
       }
