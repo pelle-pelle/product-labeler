@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Product Labeler - White Background</title>
+    <title>Product Labeler - Enhanced Catalog No.</title>
     <style>
       body {
         font-family: "Helvetica Neue", Arial, sans-serif;
@@ -117,6 +117,7 @@
         reader.readAsDataURL(e.target.files[0]);
       });
 
+      // テキスト折り返し＋座布団描画の職人関数（変更なし）
       function wrapText(
         context,
         text,
@@ -182,11 +183,11 @@
       }
 
       function draw() {
-        // 1. まずキャンバス全体を白で塗りつぶす（背景色）
+        // 1. キャンバス全体を白で塗りつぶす（背景色）
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 画像が選択されていない場合はここで終了（背景だけ白くなる）
+        // 画像が選択されていない場合はここで終了
         if (!imgElement.src) return;
 
         // 2. 画像を左下に配置
@@ -199,6 +200,7 @@
         const startX = 20;
         const textColor = "#222222";
 
+        // 商品名 (Text A)
         ctx.font = "bold 24px sans-serif";
         let nextY = wrapText(
           ctx,
@@ -210,6 +212,7 @@
           textColor,
         );
 
+        // 商品説明 (Text B)
         ctx.font = "18px sans-serif";
         wrapText(
           ctx,
@@ -221,14 +224,29 @@
           textColor,
         );
 
-        ctx.fillStyle = "#0056b3";
-        ctx.font = "bold 20px monospace";
+        // --- 【今回の修正ポイント】右下エリアの再構築 ---
+        const codeColor = "#0056b3"; // コードの色（青系）
+        const baseEndX = canvas.width - 15; // 右端からの余白
+        const baseEndY = canvas.height - 15; // 下端からの余白
+
+        // 共通の設定：右詰め
         ctx.textAlign = "right";
+        ctx.fillStyle = codeColor;
+
+        // A. 小さく「カタログ番号」というラベルを描画
+        ctx.font = "bold 16px sans-serif"; // 小さく、サンセリフ体、太字
+        // Y座標の計算：コードの基準位置（EndY）から、コードの高さ（約32px）と少し隙間（5px）を引いた位置
+        const labelY = baseEndY - 32 - 5;
+        ctx.fillText("カタログ番号", baseEndX, labelY);
+
+        // B. 大きくテキストC（商品コード）を描画
+        ctx.font = "bold 32px monospace"; // 巨大化、等幅フォント
         ctx.fillText(
           document.getElementById("textC").value,
-          canvas.width - 15,
-          canvas.height - 15,
+          baseEndX,
+          baseEndY,
         );
+        // ----------------------------------------------
       }
 
       function download() {
