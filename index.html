@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Product Labeler - Enhanced Catalog No.</title>
+    <title>Product Labeler - Logo Integrated</title>
     <style>
       body {
         font-family: "Helvetica Neue", Arial, sans-serif;
@@ -92,7 +92,12 @@
         <input type="text" id="textB" placeholder="商品説明を入力" />
 
         <label>4. Item Code (Text C)</label>
-        <input type="text" id="textC" placeholder="6桁のコード" maxlength="6" />
+        <input
+          type="text"
+          id="textC"
+          placeholder="6桁のカタログ番号"
+          maxlength="6"
+        />
 
         <div class="button-group">
           <button class="btn-draw" onclick="draw()">Preview</button>
@@ -108,6 +113,10 @@
       const ctx = canvas.getContext("2d");
       let imgElement = new Image();
 
+      // --- ロゴ画像の準備 ---
+      const logoImg = new Image();
+      logoImg.src = "InstagramLogo48.png"; // 同じフォルダに置いてください
+
       document.getElementById("upload").addEventListener("change", (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -117,7 +126,6 @@
         reader.readAsDataURL(e.target.files[0]);
       });
 
-      // テキスト折り返し＋座布団描画の職人関数（変更なし）
       function wrapText(
         context,
         text,
@@ -183,24 +191,20 @@
       }
 
       function draw() {
-        // 1. キャンバス全体を白で塗りつぶす（背景色）
+        // 背景白
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 画像が選択されていない場合はここで終了
         if (!imgElement.src) return;
 
-        // 2. 画像を左下に配置
-        const drawX = 0;
-        const drawY = canvas.height - imgElement.height;
-        ctx.drawImage(imgElement, drawX, drawY);
+        // メイン画像を左下に配置
+        ctx.drawImage(imgElement, 0, canvas.height - imgElement.height);
 
-        // 3. テキストの描画
+        // テキストA・Bの描画
         const maxWidth = 350;
         const startX = 20;
         const textColor = "#222222";
 
-        // 商品名 (Text A)
         ctx.font = "bold 24px sans-serif";
         let nextY = wrapText(
           ctx,
@@ -212,7 +216,6 @@
           textColor,
         );
 
-        // 商品説明 (Text B)
         ctx.font = "18px sans-serif";
         wrapText(
           ctx,
@@ -224,35 +227,35 @@
           textColor,
         );
 
-        // --- 【今回の修正ポイント】右下エリアの再構築 ---
-        const codeColor = "#0056b3"; // コードの色（青系）
-        const baseEndX = canvas.width - 15; // 右端からの余白
-        const baseEndY = canvas.height - 15; // 下端からの余白
-
-        // 共通の設定：右詰め
+        // カタログ番号エリア
+        const anchorX = canvas.width - 15;
+        const anchorY = canvas.height - 15;
         ctx.textAlign = "right";
-        ctx.fillStyle = codeColor;
 
-        // A. 小さく「カタログ番号」というラベルを描画
-        ctx.font = "bold 16px sans-serif"; // 小さく、サンセリフ体、太字
-        // Y座標の計算：コードの基準位置（EndY）から、コードの高さ（約32px）と少し隙間（5px）を引いた位置
-        const labelY = baseEndY - 32 - 5;
-        ctx.fillText("カタログ番号", baseEndX, labelY);
+        ctx.fillStyle = "#0056b3";
+        ctx.font = "bold 38px monospace";
+        const codeValue = document.getElementById("textC").value;
+        ctx.fillText(codeValue, anchorX, anchorY);
 
-        // B. 大きくテキストC（商品コード）を描画
-        ctx.font = "bold 32px monospace"; // 巨大化、等幅フォント
-        ctx.fillText(
-          document.getElementById("textC").value,
-          baseEndX,
-          baseEndY,
-        );
-        // ----------------------------------------------
+        if (codeValue.length > 0) {
+          ctx.font = "14px sans-serif";
+          ctx.fillText("カタログ番号", anchorX, anchorY - 42);
+        }
+
+        // --- 【ロゴの追加】不透明度60%で下の真ん中に設置 ---
+        const logoW = 113;
+        const logoH = 48;
+        const logoX = (canvas.width - logoW) / 2; // 中央位置
+        const logoY = canvas.height - logoH - 10; // 下から10px浮かせる
+
+        ctx.globalAlpha = 0.6; // これ以降の描画を不透明度60%にする
+        ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+        ctx.globalAlpha = 1.0; // 不透明度を100%に戻す（重要）
       }
 
       function download() {
         const link = document.createElement("a");
         link.download = "product-image.jpg";
-        // 画質を少し高めに(0.95)設定
         link.href = canvas.toDataURL("image/jpeg", 0.95);
         link.click();
       }
